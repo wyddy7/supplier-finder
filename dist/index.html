@@ -56,6 +56,8 @@ h1 { font: 700 clamp(20px, 3.2vw, 28px)/1.15 var(--display); margin: 0; letter-s
 .intro h2 { font: 700 17px/1.25 var(--display); margin: 0 0 8px; text-wrap: balance; }
 .intro p { margin: 0 0 8px; color: var(--muted); max-width: 46ch; }
 .intro ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+.scope { margin: 0; font-size: 13px; color: var(--muted); max-width: 120ch; }
+.scope b { color: var(--ink); font-weight: 600; }
 .controls { display: grid; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
 .row { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
 .label { font: 600 11px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); min-width: 76px; }
@@ -172,6 +174,7 @@ code { font: 13px var(--mono); background: var(--sunken); padding: 1px 6px; bord
     <div class="controls">
       <div class="row"><span class="label">Что ищем</span><div class="row" id="cats"></div></div>
       <div class="row"><span class="label">Город</span><div class="row" id="cities"></div></div>
+      <p class="scope" id="scope"></p>
       <div class="row">
         <span class="label">Фильтры</span>
         <input class="search" id="q" type="search" placeholder="Название, ассортимент, адрес…" aria-label="Поиск по найденным">
@@ -358,6 +361,14 @@ function shortText() {
 
 function renderCount() { $("short-count").textContent = S.short.size; }
 
+function renderScope() {
+  const cats = new Set(all.map((s) => s.category)).size;
+  const cities = Object.entries(DATA.cities).filter(([k]) => all.some((s) => s.city === k)).map(([, t]) => t).join(", ");
+  const date = (DATA.generated_at || "").slice(0, 10).split("-").reverse().join(".");
+  $("scope").innerHTML = `<b>Это демо:</b> ${cats} категорий × ${esc(cities)}, данные собраны заранее ${esc(date)}. ` +
+    `В рабочей версии можно задать любую категорию и город: сборщик ищет по запросу, около 40 секунд и 2 центов на модель за одну пару «категория + город».`;
+}
+
 function renderHow() {
   const run = (DATA.runs || []).at(-1) || {};
   const withSite = all.filter((s) => s.site_checked.length).length;
@@ -391,6 +402,6 @@ else {
     setTimeout(() => (e.target.textContent = "Скопировать списком"), 1600);
   };
   if (location.hash === "#how") setView("how");
-  render(); renderHow();
+  render(); renderHow(); renderScope();
 }
 </script>
