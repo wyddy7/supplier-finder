@@ -50,6 +50,12 @@ h1 { font: 700 clamp(20px, 3.2vw, 28px)/1.15 var(--display); margin: 0; letter-s
 .tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
 .tabs .count { font: 600 12px var(--mono); color: var(--pin); margin-left: 4px; }
 
+.intro { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+@media (max-width: 860px) { .intro { grid-template-columns: minmax(0, 1fr); } }
+.intro video { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; background: var(--sunken); display: block; }
+.intro h2 { font: 700 17px/1.25 var(--display); margin: 0 0 8px; text-wrap: balance; }
+.intro p { margin: 0 0 8px; color: var(--muted); max-width: 46ch; }
+.intro ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
 .controls { display: grid; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
 .row { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
 .label { font: 600 11px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); min-width: 76px; }
@@ -148,6 +154,20 @@ code { font: 13px var(--mono); background: var(--sunken); padding: 1px 6px; bord
     </div>
   </header>
 
+  <section class="intro" id="intro" hidden>
+    <video id="demo" controls preload="metadata" playsinline poster="/*__POSTER__*/"></video>
+    <div>
+      <h2>Видео на минуту: как работает сервис</h2>
+      <p>Ниже то же самое вживую: выберите категорию и город и откройте любую компанию.</p>
+      <ul>
+        <li>реальные компании из 2ГИС с контактами</li>
+        <li>условия с сайта поставщика, с цитатой и ссылкой</li>
+        <li>оценка «кому звонить первым» с объяснением</li>
+        <li>шортлист, сравнение и заметки</li>
+      </ul>
+    </div>
+  </section>
+
   <section id="view-find" class="desk-wrap" style="display:grid;gap:18px">
     <div class="controls">
       <div class="row"><span class="label">Что ищем</span><div class="row" id="cats"></div></div>
@@ -189,6 +209,8 @@ code { font: 13px var(--mono); background: var(--sunken); padding: 1px 6px; bord
 
 <script>
 const DATA = /*__DATA__*/null;
+const VIDEO = "/*__VIDEO__*/";
+if (VIDEO && !VIDEO.startsWith("/*")) { document.getElementById("demo").src = VIDEO; document.getElementById("intro").hidden = false; }
 const FIELD_LABELS = {
   works_with_business: "Работа с бизнесом", min_order: "Минимальный заказ", price_hint: "Цены",
   delivery_terms: "Доставка", region_served: "Регион работы", certificates: "Документы", assortment: "Ассортимент"
