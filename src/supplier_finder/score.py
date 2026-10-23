@@ -62,10 +62,13 @@ def score(s: Supplier, primary_rubrics: set[str], off_topic: tuple[str, ...] = (
     else:
         reasons.append(ScoreReason(label="нет отзывов в 2ГИС", points=0))
 
-    # 6. Probably not a food supplier at all
-    hit = next((w for w in off_topic if w in kind), None)
-    if hit:
+    # 6. Probably not a food supplier at all: the company kind or one of its
+    # main rubrics points elsewhere (merch printing, florists, building stores)
+    rubric_hit = next((r for r in d.rubrics[:3] for w in off_topic if w in r.lower()), None)
+    if any(w in kind for w in off_topic):
         reasons.append(ScoreReason(label=f"скорее не для общепита: «{d.kind}»", points=-30))
+    elif rubric_hit:
+        reasons.append(ScoreReason(label=f"скорее не для общепита: рубрика «{rubric_hit}»", points=-30))
 
     s.reasons = reasons
     s.score = round(sum(r.points for r in reasons), 1)
