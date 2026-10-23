@@ -3,168 +3,208 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: one working column. Picker and video on top, three suppliers to call first, everything else folded below. */
+/* Layout: an app shell. Top bar with search + city; master list on the left, the selected supplier on the right; comparison is its own view. */
 :root {
-  --bg: #f6f5f1;
+  --bg: #f3f2ee;
   --surface: #ffffff;
+  --field: #eeede8;
   --ink: #1c1d1a;
-  --muted: #62605a;
-  --line: #e2dfd7;
+  --muted: #66645d;
+  --line: #e4e1da;
   --accent: #1d7148;
   --accent-ink: #ffffff;
-  --accent-soft: #e7f0ea;
+  --accent-soft: #e6f0e9;
   --neg: #b4432f;
   --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-  --r: 10px; --r-sm: 6px;
+  --r: 8px; --r-sm: 6px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #161714; --surface: #1d1e1b; --ink: #ecebe6; --muted: #a3a198; --line: #34352f;
-    --accent: #62c08c; --accent-ink: #0f1a13; --accent-soft: #1f3328; --neg: #ec8a7a; color-scheme: dark;
+    --bg: #131412; --surface: #1b1c19; --field: #252622; --ink: #ecebe6; --muted: #a3a198; --line: #30312c;
+    --accent: #62c08c; --accent-ink: #0f1a13; --accent-soft: #1d3125; --neg: #ec8a7a; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #161714; --surface: #1d1e1b; --ink: #ecebe6; --muted: #a3a198; --line: #34352f;
-  --accent: #62c08c; --accent-ink: #0f1a13; --accent-soft: #1f3328; --neg: #ec8a7a; color-scheme: dark;
+  --bg: #131412; --surface: #1b1c19; --field: #252622; --ink: #ecebe6; --muted: #a3a198; --line: #30312c;
+  --accent: #62c08c; --accent-ink: #0f1a13; --accent-soft: #1d3125; --neg: #ec8a7a; color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
-.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 40px; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--sans); }
 a { color: var(--accent); text-underline-offset: 3px; }
-button { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-h1 { font-size: clamp(26px, 3.4vw, 34px); line-height: 1.15; font-weight: 700; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
-h2 { font-size: 20px; line-height: 1.3; font-weight: 600; margin: 0; text-wrap: balance; }
+button, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
+[hidden] { display: none !important; }
 .muted { color: var(--muted); }
-.small { font-size: 13px; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
-.top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); gap: 32px; align-items: start; }
-@media (max-width: 880px) { .top { grid-template-columns: minmax(0, 1fr); } }
-.top:has(#intro[hidden]) { grid-template-columns: minmax(0, 1fr); }
-.intro { display: grid; gap: 22px; }
-.lede { font-size: 17px; margin: 10px 0 0; max-width: 52ch; }
-.field { display: grid; gap: 8px; }
-.field > span { font-weight: 600; font-size: 14px; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px; cursor: pointer; font-size: 14px; }
-.chip:hover { border-color: var(--accent); }
-.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.scope { margin: 0; max-width: 60ch; }
-.video { display: grid; gap: 10px; }
-.video video { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border-radius: var(--r); background: #1c1d1a; display: block; }
-.video p { margin: 0; }
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
 
-.calls { display: grid; gap: 14px; }
-.calls-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; }
-.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-@media (max-width: 880px) { .cards { grid-template-columns: minmax(0, 1fr); } }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 10px; align-content: start; }
-.card[data-active="true"] { border-color: var(--accent); }
-.card-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: baseline; }
-.rank { font-weight: 700; color: var(--accent); }
-.name { font-weight: 600; font-size: 17px; overflow-wrap: anywhere; }
-.score { font-family: var(--mono); font-size: 14px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.score b { color: var(--ink); font-weight: 500; }
-.why { margin: 0; }
-.contact { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: 14px; }
-.phone { font-family: var(--mono); font-size: 14px; user-select: all; overflow-wrap: anywhere; }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-.btn { border: 1px solid var(--line); background: transparent; border-radius: var(--r-sm); padding: 6px 12px; cursor: pointer; font-size: 14px; }
-.btn:hover { border-color: var(--accent); }
-.btn.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+/* top bar */
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.brand { font-weight: 700; font-size: 15px; white-space: nowrap; margin-right: 6px; }
+.search { position: relative; flex: 1 1 320px; min-width: 0; max-width: 560px; }
+.search input { width: 100%; border: 1px solid transparent; background: var(--field); border-radius: var(--r); padding: 8px 12px; }
+.search input:focus { border-color: var(--accent); outline: none; background: var(--surface); }
+.pop { position: absolute; z-index: 20; left: 0; top: calc(100% + 4px); min-width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 4px; margin: 0; list-style: none; box-shadow: 0 8px 24px rgb(0 0 0 / .12); }
+.pop li button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 7px 10px; border-radius: var(--r-sm); cursor: pointer; white-space: nowrap; }
+.pop li button:hover, .pop li button[aria-selected="true"] { background: var(--accent-soft); }
+.pop .hint { padding: 7px 10px; color: var(--muted); font-size: 13px; }
+.city { position: relative; }
+.ctrl { border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 7px 12px; cursor: pointer; white-space: nowrap; }
+.ctrl:hover { border-color: var(--accent); }
+.ctrl[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.ctrl .count { font-family: var(--mono); margin-left: 6px; }
+.bar-right { display: flex; gap: 8px; margin-left: auto; }
+.short { display: none; }
 
-.detail { background: var(--surface); border: 1px solid var(--accent); border-radius: var(--r); padding: 22px; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 28px; }
-@media (max-width: 880px) { .detail { grid-template-columns: minmax(0, 1fr); padding: 16px; } }
-.detail h3 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
-.detail section { display: grid; gap: 4px; align-content: start; }
-.detail .gap { margin-top: 18px; }
-.pts div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-.pts b { font-family: var(--mono); font-weight: 500; font-variant-numeric: tabular-nums; }
-.pts .neg { color: var(--neg); }
-.facts { display: grid; gap: 14px; }
-.fact { display: grid; gap: 2px; font-size: 14px; }
-.fact .k { color: var(--muted); font-size: 13px; }
-.fact q { display: block; quotes: "«" "»"; color: var(--muted); font-size: 13px; border-left: 2px solid var(--line); padding-left: 10px; margin-top: 4px; }
-.fact .src { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+/* search view: master–detail */
+.view { min-height: 0; }
+.md { height: 100%; display: grid; grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); min-height: 0; }
+.list-pane { border-right: 1px solid var(--line); background: var(--surface); overflow: auto; min-height: 0; }
+.list-head { padding: 12px 16px 10px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; position: sticky; top: 0; background: var(--surface); z-index: 2; }
+.list-head .title { font-weight: 600; }
+.demo { font-size: 12px; color: var(--muted); }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.filter { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 3px 10px; font-size: 13px; cursor: pointer; }
+.filter[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.list { list-style: none; margin: 0; padding: 0; }
+.item { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 2px 10px; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 11px 16px; cursor: pointer; }
+.item:hover { background: var(--bg); }
+.item[aria-current="true"] { background: var(--accent-soft); }
+.item .rank { color: var(--muted); font-family: var(--mono); font-size: 12px; padding-top: 2px; }
+.item .name { font-weight: 600; overflow-wrap: anywhere; }
+.item .score { font-family: var(--mono); font-size: 13px; }
+.item .why { grid-column: 2 / 4; font-size: 13px; color: var(--muted); }
+.empty { padding: 16px; color: var(--muted); }
+
+.card-pane { overflow: auto; min-height: 0; }
+.card { max-width: 860px; padding: 22px 28px 40px; display: grid; gap: 22px; }
+.back { display: none !important; }
+.head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: start; }
+.head h1 { font-size: 22px; line-height: 1.25; margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.head .sub { color: var(--muted); }
+.head .meta { grid-column: 1 / 3; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
+.badge { text-align: right; }
+.badge b { font-family: var(--mono); font-size: 22px; font-weight: 500; }
+.badge span { display: block; font-size: 12px; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.act { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 8px 14px; text-decoration: none; color: var(--ink); cursor: pointer; }
+.act:hover { border-color: var(--accent); }
+.act.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.act.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.act .mono { font-size: 13px; }
+.sec { display: grid; gap: 10px; }
+.sec h2 { font-size: 15px; font-weight: 600; margin: 0; }
+.kv { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 4px 18px; padding: 10px 0; border-top: 1px solid var(--line); }
+.kv:first-of-type { border-top: 0; }
+.kv .k { color: var(--muted); }
+.kv q { display: block; quotes: "«" "»"; color: var(--muted); font-size: 13px; margin-top: 4px; }
+.kv .src { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
 .unknown { color: var(--muted); }
-.ask { background: var(--accent-soft); border-radius: var(--r-sm); padding: 12px 14px; font-size: 14px; margin-top: 14px; }
-textarea { width: 100%; min-height: 72px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg); padding: 8px 10px; font: inherit; color: inherit; resize: vertical; }
+.pts div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 6px 0; border-top: 1px solid var(--line); }
+.pts div:first-child { border-top: 0; }
+.pts b { font-family: var(--mono); font-weight: 500; }
+.pts .neg { color: var(--neg); }
+textarea { width: 100%; min-height: 70px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--field); padding: 8px 10px; resize: vertical; }
 
-details.fold { border-top: 1px solid var(--line); padding-top: 18px; }
-details.fold > summary { cursor: pointer; font-weight: 600; font-size: 17px; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
-details.fold > summary::-webkit-details-marker { display: none; }
-details.fold > summary::before { content: "+"; font-family: var(--mono); color: var(--accent); width: 14px; }
-details.fold[open] > summary::before { content: "−"; }
-details.fold > summary .muted { font-weight: 400; font-size: 14px; }
-.fold-body { display: grid; gap: 14px; margin-top: 16px; }
-.filters { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
-.search { flex: 1 1 240px; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-sm); padding: 8px 10px; font: inherit; color: inherit; }
-.toggle { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; font-size: 14px; }
-.row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto auto; gap: 4px 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
-.row .name { font-size: 15px; }
-.row .rank { font-weight: 500; color: var(--muted); font-family: var(--mono); font-size: 13px; }
-@media (max-width: 600px) { .row { grid-template-columns: 24px minmax(0, 1fr) auto; } .row .btn { grid-column: 2 / 4; justify-self: start; } }
-.row-detail { padding: 12px 0 18px; }
-.tablewrap { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; min-width: 820px; font-size: 13px; }
+/* comparison view */
+.compare { height: 100%; overflow: auto; padding: 20px 24px 40px; display: grid; gap: 14px; align-content: start; }
+.compare-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.compare-head h1 { font-size: 20px; margin: 0; font-weight: 700; margin-right: auto; }
+.tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+table { border-collapse: collapse; width: 100%; min-width: 900px; font-size: 13px; }
 th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-weight: 600; color: var(--muted); }
-td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.empty { color: var(--muted); margin: 0; }
+tr:last-child td { border-bottom: 0; }
 
-.how { display: grid; gap: 14px; border-top: 1px solid var(--line); padding-top: 28px; }
-.how ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 75ch; }
-.how p { margin: 0; max-width: 75ch; }
-.stats { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 14px; color: var(--muted); }
+/* how it works panel */
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgb(20 20 18 / .45); display: grid; place-items: start center; overflow: auto; padding: calc(env(safe-area-inset-top, 0px) + 32px) 16px 32px; }
+.panel { width: min(880px, 100%); background: var(--surface); border-radius: 12px; padding: 22px 24px 26px; display: grid; gap: 16px; box-shadow: 0 20px 60px rgb(0 0 0 / .25); }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.panel h2 { font-size: 18px; margin: 0; }
+.panel video { width: 100%; aspect-ratio: 16 / 9; border-radius: var(--r); background: #1c1d1a; display: block; }
+.panel ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.panel p { margin: 0; }
+.stats { display: flex; flex-wrap: wrap; gap: 4px 20px; color: var(--muted); }
 .stats b { color: var(--ink); font-family: var(--mono); font-weight: 500; }
-code { font-family: var(--mono); font-size: 13px; background: var(--surface); border: 1px solid var(--line); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
-@media (prefers-reduced-motion: no-preference) { .chip, .btn, .card { transition: border-color .15s, background-color .15s; } }
+code { font-family: var(--mono); font-size: 12px; background: var(--field); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+
+/* phone: list and card are two screens */
+@media (max-width: 760px) {
+  .brand { display: none; }
+  .search { flex-basis: 100%; max-width: none; order: -1; }
+  .long { display: none; }
+  .short { display: inline; }
+  #how-btn { padding-inline: 13px; }
+  .bar-right { margin-left: auto; }
+  .md { grid-template-columns: minmax(0, 1fr); }
+  .md .card-pane { display: none; }
+  .md.show-card .list-pane { display: none; }
+  .md.show-card .card-pane { display: block; }
+  .card { padding: 16px; }
+  .back { display: inline-flex !important; justify-self: start; }
+  .kv { grid-template-columns: minmax(0, 1fr); }
+  .compare { padding: 16px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .item, .ctrl, .act, .filter { transition: background-color .12s, border-color .12s; }
+  .overlay:not([hidden]) { animation: fade-in .22s ease-out; }
+  .overlay:not([hidden]) .panel { animation: rise .26s cubic-bezier(.2, .8, .2, 1); }
+  #view-compare:not([hidden]) { animation: fade-in .18s ease-out; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+}
 </style>
 
-<div class="wrap">
-  <div class="top">
-    <div class="intro">
-      <div>
-        <h1>Поставщики для ресторана</h1>
-        <p class="lede">Выберите, что закупаете и в каком городе. Сервис покажет трёх поставщиков, которым стоит позвонить первым, и объяснит почему.</p>
-      </div>
-      <div class="field"><span>Что закупаем</span><div class="chips" id="cats"></div></div>
-      <div class="field"><span>Город</span><div class="chips" id="cities"></div></div>
-      <p class="small muted scope" id="scope"></p>
+<div class="app">
+  <header class="bar">
+    <span class="brand">Поставщики</span>
+    <div class="search">
+      <input id="q" type="text" autocomplete="off" placeholder="Что ищете? Например, упаковка" aria-label="Что ищете">
+      <ul class="pop" id="suggest" hidden></ul>
     </div>
-    <div class="video" id="intro" hidden>
-      <video id="demo" controls preload="metadata" playsinline poster="/*__POSTER__*/"></video>
-      <p class="small muted">Видео на минуту: как сервис находит поставщиков, откуда берёт условия и почему ставит их в таком порядке.</p>
+    <div class="city">
+      <button class="ctrl" id="city-btn" aria-haspopup="listbox"></button>
+      <ul class="pop" id="city-menu" hidden></ul>
+    </div>
+    <div class="bar-right">
+      <button class="ctrl" id="compare-btn" aria-pressed="false">Сравнение<span class="count" id="compare-count">0</span></button>
+      <button class="ctrl" id="how-btn" aria-label="Как это работает"><span class="long">Как это работает</span><span class="short">?</span></button>
+    </div>
+  </header>
+
+  <div class="view" id="view-search">
+    <div class="md" id="md">
+      <aside class="list-pane">
+        <div class="list-head">
+          <div class="title" id="list-title"></div>
+          <div class="filters">
+            <button class="filter" id="f-b2b" aria-pressed="false">Только опт и производство</button>
+            <button class="filter" id="f-terms" aria-pressed="false">Условия на сайте</button>
+          </div>
+          <div class="demo" id="demo"></div>
+        </div>
+        <ol class="list" id="list"></ol>
+      </aside>
+      <section class="card-pane" id="card"></section>
     </div>
   </div>
 
-  <section class="calls" aria-live="polite">
-    <div class="calls-head"><h2 id="calls-title">Кому позвонить первым</h2><span class="small muted" id="calls-note"></span></div>
-    <div class="cards" id="cards"></div>
-    <div id="detail-top"></div>
-  </section>
+  <div class="view" id="view-compare" hidden>
+    <div class="compare" id="compare"></div>
+  </div>
+</div>
 
-  <details class="fold" id="all">
-    <summary>Все компании в выдаче <span class="muted" id="all-note"></span></summary>
-    <div class="fold-body">
-      <div class="filters">
-        <input class="search" id="q" type="search" placeholder="Поиск по названию, ассортименту, адресу" aria-label="Поиск по найденным компаниям">
-        <label class="toggle"><input type="checkbox" id="f-b2b"> только опт и производство</label>
-        <label class="toggle"><input type="checkbox" id="f-terms"> условия есть на сайте</label>
-      </div>
-      <div id="rows"></div>
+<div class="overlay" id="how" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="how-title">
+    <div class="panel-head"><h2 id="how-title">Как это работает</h2><button class="ctrl" id="how-close">Закрыть</button></div>
+    <div id="how-video" hidden>
+      <video id="demo-video" controls preload="metadata" playsinline poster="/*__POSTER__*/"></video>
+      <p class="muted" style="margin-top:8px">Видео на минуту: поиск, оценка, условия с цитатами, сравнение.</p>
     </div>
-  </details>
-
-  <details class="fold" id="compare">
-    <summary>Сравнение <span class="muted" id="compare-note"></span></summary>
-    <div class="fold-body" id="compare-body"></div>
-  </details>
-
-  <section class="how" id="how">
-    <h2>Как это работает</h2>
-    <p>Трудная часть здесь не интерфейс, а данные: найти реальные компании и не выдумать им условия. Поэтому сервис собирает данные в четыре шага, и у каждого факта есть ссылка на страницу, откуда он взят.</p>
+    <p>Трудная часть здесь не интерфейс, а данные: найти реальные компании и не выдумать им условия. Сервис собирает данные в четыре шага, и у каждого факта есть ссылка на страницу, откуда он взят.</p>
     <ol>
       <li>Ищет компании по категории в 2ГИС для выбранного города и отсекает тех, у кого нет нужной рубрики.</li>
       <li>Берёт из карточки 2ГИС телефоны, почту, сайт, мессенджеры, рейтинг и число отзывов.</li>
@@ -172,18 +212,15 @@ code { font-family: var(--mono); font-size: 13px; background: var(--surface); bo
       <li>Ставит оценку из понятных баллов: работает ли с бизнесом, совпадает ли профиль, есть ли контакты, известны ли условия, какой рейтинг с поправкой на число отзывов.</li>
     </ol>
     <div class="stats" id="stats"></div>
-    <p class="small muted" id="snapshot"></p>
-  </section>
+    <p class="muted" id="snapshot"></p>
+  </div>
 </div>
 
 <script>
 const DATA = /*__DATA__*/null;
 const VIDEO = "/*__VIDEO__*/";
-if (VIDEO && !VIDEO.startsWith("/*")) { document.getElementById("demo").src = VIDEO; document.getElementById("intro").hidden = false; }
-const FIELD_LABELS = {
-  works_with_business: "Работа с бизнесом", min_order: "Минимальный заказ", price_hint: "Цены",
-  delivery_terms: "Доставка", region_served: "Регион работы", certificates: "Документы", assortment: "Ассортимент"
-};
+if (VIDEO && !VIDEO.startsWith("/*")) { document.getElementById("demo-video").src = VIDEO; document.getElementById("how-video").hidden = false; }
+const TERMS = [["min_order", "Минимальный заказ"], ["price_hint", "Цены"], ["delivery_terms", "Доставка"], ["certificates", "Документы"], ["region_served", "Регион работы"], ["works_with_business", "Работа с бизнесом"], ["assortment", "Ассортимент"]];
 const TERM_SHORT = { min_order: "мин. заказ", price_hint: "цены", delivery_terms: "доставка", certificates: "документы" };
 const MESSENGER = { telegram: "Telegram", whatsapp: "WhatsApp", vkontakte: "ВКонтакте", viber: "Viber", max: "MAX" };
 const store = {
@@ -191,9 +228,9 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
 };
 const S = {
-  cat: store.get("sf2.cat", "packaging"), city: store.get("sf2.city", "ekaterinburg"),
-  q: "", b2b: false, terms: false, open: null,
-  short: new Set(store.get("sf2.short", [])), notes: store.get("sf2.notes", {})
+  cat: store.get("sf3.cat", "packaging"), city: store.get("sf3.city", "ekaterinburg"), sel: null,
+  view: "search", b2b: false, terms: false, mobileCard: false,
+  short: new Set(store.get("sf3.short", [])), notes: store.get("sf3.notes", {})
 };
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -203,151 +240,157 @@ const byKey = Object.fromEntries(all.map((s) => [key(s), s]));
 const isB2B = (s) => s.reasons.some((r) => r.label.startsWith("B2B")) || !!s.site.works_with_business;
 const termsKnown = (s) => Object.keys(TERM_SHORT).filter((f) => s.site[f]);
 const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } };
-const plural = (n, one, few, many) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? one : m >= 2 && m <= 4 && (h < 12 || h > 14) ? few : many; };
+const plural = (n, a, b, c) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 12 || h > 14) ? b : c; };
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+const cities = () => Object.entries(DATA.cities).filter(([k]) => all.some((s) => s.city === k));
 
 function ranked() { return all.filter((s) => s.category === S.cat && s.city === S.city).sort((a, b) => b.score - a.score); }
+function visible() { return ranked().filter((s) => !S.b2b || isB2B(s)).filter((s) => !S.terms || termsKnown(s).length); }
 
 function whyLine(s) {
   const d = s.directory, parts = [];
   if (d.kind) parts.push(cap(d.kind));
   const t = termsKnown(s);
-  if (t.length) parts.push("на сайте есть " + t.map((f) => TERM_SHORT[f]).join(", "));
-  if (d.rating && d.review_count) parts.push(`★ ${String(d.rating).replace(".", ",")}, ${d.review_count} ${plural(d.review_count, "отзыв", "отзыва", "отзывов")}`);
+  if (t.length) parts.push("на сайте: " + t.map((f) => TERM_SHORT[f]).join(", "));
+  if (d.rating && d.review_count) parts.push(`★ ${String(d.rating).replace(".", ",")}`);
   if (s.reasons.some((r) => r.points < 0)) parts.push("скорее не для общепита");
   return parts.join(" · ");
 }
 
-function chips(el, entries, current, onPick) {
-  el.innerHTML = entries.map(([k, label]) => `<button class="chip" aria-pressed="${k === current}" data-k="${esc(k)}">${esc(label)}</button>`).join("");
-  el.querySelectorAll("button").forEach((b) => (b.onclick = () => onPick(b.dataset.k)));
+/* search with suggestions: the five demo categories */
+function suggestions(q) {
+  q = q.trim().toLowerCase();
+  return Object.entries(DATA.categories).filter(([, t]) => {
+    const tl = t.toLowerCase();
+    return !q || tl.includes(q) || tl.split(/[\s,]+/).some((w) => w.length > 2 && w.startsWith(q.slice(0, 4)));
+  });
+}
+function openSuggest() {
+  const q = $("q").value === DATA.categories[S.cat] ? "" : $("q").value;
+  const items = suggestions(q);
+  $("suggest").innerHTML = items.length
+    ? items.map(([k, t]) => `<li><button data-cat="${k}" aria-selected="${k === S.cat}">${esc(t)}</button></li>`).join("") + `<li class="hint">В демо 5 категорий. В рабочей версии — любой запрос.</li>`
+    : `<li class="hint">Такой категории нет в демо. Есть: ${esc(Object.values(DATA.categories).join(", ").toLowerCase())}.</li>`;
+  $("suggest").hidden = false;
+  $("suggest").querySelectorAll("[data-cat]").forEach((b) => (b.onmousedown = (e) => { e.preventDefault(); pickCat(b.dataset.cat); }));
+}
+function pickCat(k) { S.cat = k; S.sel = null; S.mobileCard = false; store.set("sf3.cat", k); $("q").value = DATA.categories[k]; $("suggest").hidden = true; $("q").blur(); render(); }
+
+function renderBar() {
+  if (document.activeElement !== $("q")) $("q").value = DATA.categories[S.cat];
+  $("city-btn").textContent = DATA.cities[S.city] + " ▾";
+  $("compare-count").textContent = S.short.size;
+  $("compare-btn").setAttribute("aria-pressed", S.view === "compare");
 }
 
-function renderPicker() {
-  chips($("cats"), Object.entries(DATA.categories), S.cat, (k) => { S.cat = k; S.open = null; store.set("sf2.cat", k); render(); });
-  const cities = Object.entries(DATA.cities).filter(([k]) => all.some((s) => s.city === k));
-  chips($("cities"), cities, S.city, (k) => { S.city = k; S.open = null; store.set("sf2.city", k); render(); });
+function renderList() {
+  const base = ranked(), rows = visible();
+  $("list-title").textContent = `${DATA.categories[S.cat]}, ${DATA.cities[S.city]}: ${base.length} ${plural(base.length, "поставщик", "поставщика", "поставщиков")}`;
+  $("f-b2b").setAttribute("aria-pressed", S.b2b);
+  $("f-terms").setAttribute("aria-pressed", S.terms);
+  if (!S.sel || !rows.some((s) => key(s) === S.sel)) S.sel = rows[0] ? key(rows[0]) : null;
+  $("list").innerHTML = rows.length ? rows.map((s) => `<li><button class="item" data-k="${esc(key(s))}" aria-current="${key(s) === S.sel}">
+      <span class="rank">${base.indexOf(s) + 1}</span><span class="name">${esc(s.directory.name)}</span><span class="score">${Math.round(s.score)}</span>
+      <span class="why">${esc(whyLine(s))}</span></button></li>`).join("")
+    : `<li class="empty">Под эти фильтры никто не подходит.</li>`;
+  $("list").querySelectorAll(".item").forEach((b) => (b.onclick = () => { S.sel = b.dataset.k; S.mobileCard = true; render(); $("card").scrollTop = 0; }));
 }
 
-function card(s, i) {
-  const d = s.directory, c = s.contacts, k = key(s), open = S.open === k, inShort = S.short.has(k);
-  return `<article class="card" data-active="${open}">
-    <div class="card-top"><span class="rank">${i + 1}</span><span class="name">${esc(d.name)}</span><span class="score"><b>${Math.round(s.score)}</b> из 100</span></div>
-    <p class="why small">${esc(whyLine(s))}</p>
-    <div class="contact">${c.phones[0] ? `<span class="phone">${esc(c.phones[0])}</span>` : `<span class="unknown">телефона нет</span>`}
-      ${c.websites[0] ? `<a href="${esc(c.websites[0])}" target="_blank" rel="noopener">${esc(host(c.websites[0]))}</a>` : ""}</div>
-    <div class="actions"><button class="btn${open ? " on" : ""}" data-open="${esc(k)}">${open ? "Скрыть подробности" : "Подробнее"}</button>
-      <button class="btn${inShort ? " on" : ""}" data-short="${esc(k)}">${inShort ? "В сравнении" : "В сравнение"}</button></div>
-  </article>`;
-}
-
-function factHTML(s, f) {
+function termRow(s, f, label) {
   const x = s.site[f];
-  if (!x) return `<div class="fact"><span class="k">${FIELD_LABELS[f]}</span><span class="unknown">неизвестно</span></div>`;
+  if (!x) return `<div class="kv"><span class="k">${label}</span><span class="unknown">неизвестно${TERM_SHORT[f] ? ", спросить при звонке" : ""}</span></div>`;
   let path = ""; try { path = new URL(x.source_url).pathname.replace(/\/$/, ""); } catch {}
-  return `<div class="fact"><span class="k">${FIELD_LABELS[f]}</span><span>${esc(x.value)}</span>
-    ${x.quote ? `<q>${esc(x.quote)}</q>` : ""}<a class="src" href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(host(x.source_url) + path)}</a></div>`;
+  return `<div class="kv"><span class="k">${label}</span><span>${esc(x.value)}${x.quote ? `<q>${esc(x.quote)}</q>` : ""}<a class="src" href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(host(x.source_url) + path)}</a></span></div>`;
 }
 
-function detail(s) {
-  const d = s.directory, c = s.contacts, k = key(s);
-  const contacts = [
-    ...c.phones.map((p) => `<div class="contact"><span class="phone">${esc(p)}</span></div>`),
-    ...c.emails.map((e) => `<div class="contact"><span class="phone">${esc(e)}</span></div>`),
-    ...c.websites.map((w) => `<div class="contact"><a href="${esc(w)}" target="_blank" rel="noopener">${esc(host(w))}</a></div>`),
-    ...Object.entries(c.messengers).map(([m, u]) => `<div class="contact"><a href="${esc(u)}" target="_blank" rel="noopener">${esc(MESSENGER[m] || m)}</a></div>`),
-  ].join("");
-  return `<div class="detail" id="detail">
-    <section>
-      <h3>${esc(d.name)}: почему ${Math.round(s.score)} из 100</h3>
-      <div class="pts">${s.reasons.map((r) => `<div><span>${esc(r.label)}</span><b class="${r.points < 0 ? "neg" : ""}">${r.points > 0 ? "+" : ""}${r.points}</b></div>`).join("")}</div>
-      ${s.ask.length ? `<div class="ask"><b>Спросить при звонке:</b> ${esc(s.ask.join(", "))}.</div>` : ""}
-      <h3 class="gap">Контакты</h3>${contacts || `<span class="unknown">в справочнике нет контактов</span>`}
-      <p class="small muted" style="margin:6px 0 0">${esc(d.address || "")} · <a href="${esc(c.source_url)}" target="_blank" rel="noopener">карточка в 2ГИС</a></p>
-      <h3 class="gap">Заметка</h3>
-      <textarea id="note" data-k="${esc(k)}" placeholder="Например: звонил 24.10, прайс пришлют на почту">${esc(S.notes[k] || "")}</textarea>
-      <span class="small muted">Хранится только в этом браузере.</span>
-    </section>
-    <section>
-      <h3>Условия с сайта компании</h3>
-      <div class="facts">${Object.keys(FIELD_LABELS).map((f) => factHTML(s, f)).join("")}</div>
-      <p class="small muted" style="margin:10px 0 0">${s.site_checked.length ? "Каждое условие подтверждено дословной цитатой со страницы. Чего на сайте нет, помечено «неизвестно»." : "У компании нет сайта в справочнике: условия только по телефону."}</p>
-    </section>
+function renderCard() {
+  const s = byKey[S.sel];
+  $("md").classList.toggle("show-card", S.mobileCard && !!s);
+  if (!s) { $("card").innerHTML = `<div class="card"><p class="muted">Выберите поставщика в списке.</p></div>`; return; }
+  const d = s.directory, c = s.contacts, k = key(s), inShort = S.short.has(k), phone = c.phones[0];
+  const tel = phone ? "tel:" + phone.replace(/[^\d+]/g, "") : null;
+  const others = [
+    ...c.phones.slice(1).map((p) => `<span class="mono">${esc(p)}</span>`),
+    ...c.emails.map((e) => `<span class="mono">${esc(e)}</span>`),
+    ...Object.entries(c.messengers).map(([m, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(MESSENGER[m] || m)}</a>`),
+  ];
+  $("card").innerHTML = `<div class="card">
+    <button class="act back" id="back">← К списку</button>
+    <div class="head">
+      <div><h1>${esc(d.name)}</h1><div class="sub">${esc(cap(d.kind || ""))}</div></div>
+      <div class="badge"><b>${Math.round(s.score)}</b><span>из 100</span></div>
+      <div class="meta">${d.rating ? `<span>★ ${String(d.rating).replace(".", ",")} · ${d.review_count} ${plural(d.review_count, "отзыв", "отзыва", "отзывов")}</span>` : `<span>нет отзывов</span>`}
+        ${d.address ? `<span>${esc(d.address)}</span>` : ""}${d.branch_count > 1 ? `<span>${d.branch_count} филиалов</span>` : ""}</div>
+    </div>
+    <div class="actions">
+      ${tel ? `<a class="act primary" href="${tel}">Позвонить <span class="mono">${esc(phone)}</span></a>` : `<span class="act">Телефона нет</span>`}
+      ${c.websites[0] ? `<a class="act" href="${esc(c.websites[0])}" target="_blank" rel="noopener">Сайт ${esc(host(c.websites[0]))}</a>` : ""}
+      <a class="act" href="${esc(c.source_url)}" target="_blank" rel="noopener">2ГИС</a>
+      <button class="act${inShort ? " on" : ""}" id="short-toggle">${inShort ? "В сравнении ✓" : "В сравнение"}</button>
+    </div>
+    <div class="sec" id="sec-terms"><h2>Условия с сайта</h2>
+      <div>${TERMS.map(([f, l]) => termRow(s, f, l)).join("")}</div>
+      <p class="muted" style="margin:0">${s.site_checked.length ? "Каждое условие подтверждено дословной цитатой со страницы компании." : "У компании нет сайта в справочнике: условия только по телефону."}</p></div>
+    <div class="sec" id="sec-why"><h2>Почему ${Math.round(s.score)} из 100</h2>
+      <div class="pts">${s.reasons.map((r) => `<div><span>${esc(r.label)}</span><b class="${r.points < 0 ? "neg" : ""}">${r.points > 0 ? "+" : ""}${r.points}</b></div>`).join("")}</div></div>
+    ${others.length ? `<div class="sec"><h2>Ещё контакты</h2><div class="actions">${others.join("")}</div></div>` : ""}
+    <div class="sec"><h2>Заметка</h2><textarea id="note" placeholder="Например: звонил 24.10, прайс пришлют на почту">${esc(S.notes[k] || "")}</textarea>
+      <span class="muted" style="font-size:12px">Хранится только в этом браузере.</span></div>
   </div>`;
-}
-
-function renderCalls() {
-  const rows = ranked(), top = rows.slice(0, 3);
-  $("calls-title").textContent = `Кому позвонить первым: ${DATA.categories[S.cat].toLowerCase()}, ${DATA.cities[S.city]}`;
-  $("calls-note").textContent = `3 лучших из ${rows.length} по оценке`;
-  $("cards").innerHTML = top.map(card).join("");
-  const openTop = top.find((s) => key(s) === S.open);
-  $("detail-top").innerHTML = openTop ? detail(openTop) : "";
-}
-
-function renderRows() {
-  const q = S.q.trim().toLowerCase(), base = ranked(), topKeys = new Set(base.slice(0, 3).map(key));
-  const rows = base.filter((s) => !S.b2b || isB2B(s)).filter((s) => !S.terms || termsKnown(s).length)
-    .filter((s) => !q || [s.directory.name, s.directory.kind, s.directory.address, s.site.assortment?.value, s.directory.rubrics.join(" ")].join(" ").toLowerCase().includes(q));
-  $("all-note").textContent = `${base.length} ${plural(base.length, "компания", "компании", "компаний")}: фильтры, оценка, заметки`;
-  if (!rows.length) { $("rows").innerHTML = `<p class="empty">Под эти фильтры никто не подходит.</p>`; return; }
-  $("rows").innerHTML = rows.map((s) => {
-    const k = key(s), open = S.open === k;
-    return `<div class="row"><span class="rank">${base.indexOf(s) + 1}</span>
-      <span><span class="name">${esc(s.directory.name)}</span><br><span class="small muted">${esc(whyLine(s))}</span></span>
-      <span class="score"><b>${Math.round(s.score)}</b></span>
-      <button class="btn${open ? " on" : ""}" data-open="${esc(k)}">${open ? "Скрыть" : "Подробнее"}</button></div>
-      ${open && !topKeys.has(k) ? `<div class="row-detail">${detail(s)}</div>` : ""}`;
-  }).join("");
+  $("back").onclick = () => { S.mobileCard = false; render(); };
+  $("short-toggle").onclick = () => { S.short.has(k) ? S.short.delete(k) : S.short.add(k); store.set("sf3.short", [...S.short]); render(); };
+  $("note").oninput = (e) => { S.notes[k] = e.target.value; store.set("sf3.notes", S.notes); };
 }
 
 function cell(s, f) { const x = s.site[f]; return x ? `${esc(x.value)} <a href="${esc(x.source_url)}" target="_blank" rel="noopener">источник</a>` : `<span class="unknown">неизвестно</span>`; }
-
 function renderCompare() {
   const rows = [...S.short].map((k) => byKey[k]).filter(Boolean).sort((a, b) => b.score - a.score);
-  $("compare-note").textContent = rows.length ? `${rows.length} ${plural(rows.length, "компания", "компании", "компаний")} в одной таблице` : "пока пусто: нажмите «В сравнение» у компании";
-  if (!rows.length) { $("compare-body").innerHTML = `<p class="empty">Добавьте компании кнопкой «В сравнение», и они появятся здесь в одной таблице.</p>`; return; }
-  $("compare-body").innerHTML = `<div class="tablewrap"><table><thead><tr><th>Компания</th><th>Оценка</th><th>Мин. заказ</th><th>Доставка</th><th>Документы</th><th>Цены</th><th>Телефон</th><th>Заметка</th></tr></thead><tbody>${
-    rows.map((s) => `<tr><td><b>${esc(s.directory.name)}</b><br><span class="muted">${esc(DATA.categories[s.category])}, ${esc(DATA.cities[s.city])}</span></td>
-      <td class="num">${Math.round(s.score)}</td><td>${cell(s, "min_order")}</td><td>${cell(s, "delivery_terms")}</td><td>${cell(s, "certificates")}</td><td>${cell(s, "price_hint")}</td>
-      <td class="num">${esc(s.contacts.phones[0] || "—")}</td><td>${esc(S.notes[key(s)] || "")}</td></tr>`).join("")
-  }</tbody></table></div><div><button class="btn" id="copy-short">Скопировать списком</button></div>`;
-  $("copy-short").onclick = async (e) => {
+  $("compare").innerHTML = `<div class="compare-head"><h1>Сравнение: ${rows.length} ${plural(rows.length, "поставщик", "поставщика", "поставщиков")}</h1>
+      ${rows.length ? `<button class="ctrl" id="copy-short">Скопировать списком</button>` : ""}<button class="ctrl" id="to-search">← К поиску</button></div>
+    ${rows.length ? `<div class="tablewrap"><table><thead><tr><th>Поставщик</th><th>Оценка</th><th>Мин. заказ</th><th>Доставка</th><th>Документы</th><th>Цены</th><th>Телефон</th><th>Заметка</th></tr></thead><tbody>${
+      rows.map((s) => `<tr><td><b>${esc(s.directory.name)}</b><br><span class="muted">${esc(DATA.categories[s.category])}, ${esc(DATA.cities[s.city])}</span></td>
+        <td class="mono">${Math.round(s.score)}</td><td>${cell(s, "min_order")}</td><td>${cell(s, "delivery_terms")}</td><td>${cell(s, "certificates")}</td><td>${cell(s, "price_hint")}</td>
+        <td class="mono">${esc(s.contacts.phones[0] || "—")}</td><td>${esc(S.notes[key(s)] || "")}</td></tr>`).join("")}</tbody></table></div>`
+      : `<p class="muted">Пока пусто. Откройте поставщика и нажмите «В сравнение».</p>`}`;
+  $("to-search").onclick = () => setView("search");
+  const cp = $("copy-short");
+  if (cp) cp.onclick = async () => {
     const text = rows.map((s, i) => `${i + 1}. ${s.directory.name} (${DATA.cities[s.city]}), оценка ${Math.round(s.score)}; тел. ${s.contacts.phones.join(", ") || "—"}; мин. заказ: ${s.site.min_order?.value || "неизвестно"}; доставка: ${s.site.delivery_terms?.value || "неизвестно"}` + (S.notes[key(s)] ? `; заметка: ${S.notes[key(s)]}` : "")).join("\n");
-    try { await navigator.clipboard.writeText(text); e.target.textContent = "Скопировано"; } catch { e.target.textContent = "Не удалось скопировать"; }
-    setTimeout(() => (e.target.textContent = "Скопировать списком"), 1600);
+    try { await navigator.clipboard.writeText(text); cp.textContent = "Скопировано"; } catch { cp.textContent = "Не удалось скопировать"; }
+    setTimeout(() => (cp.textContent = "Скопировать списком"), 1600);
   };
 }
 
 function renderStatic() {
-  const cats = Object.keys(DATA.categories).length;
-  const cities = Object.entries(DATA.cities).filter(([k]) => all.some((s) => s.city === k)).map(([, t]) => t).join(", ");
   const date = (DATA.generated_at || "").slice(0, 10).split("-").reverse().join(".");
-  $("scope").textContent = `Это демо: ${cats} категорий в городах ${cities}, данные собраны ${date}. В рабочей версии можно задать любую категорию и город: сбор по запросу занимает около 40 секунд и 2 центов на модель.`;
+  $("demo").textContent = `Демо: ${Object.keys(DATA.categories).length} категорий, ${cities().length} города, данные на ${date}. В рабочей версии — любой запрос, около 40 секунд на сбор.`;
   const run = (DATA.runs || []).at(-1) || {};
   const facts = all.reduce((n, s) => n + Object.values(s.site).filter(Boolean).length, 0);
   $("stats").innerHTML = `<span>компаний <b>${all.length}</b></span><span>с прочитанным сайтом <b>${all.filter((s) => s.site_checked.length).length}</b></span><span>условий с цитатой <b>${facts}</b></span><span>модель за весь сбор <b>$${run.llm_usd != null ? Number(run.llm_usd).toFixed(2) : "—"}</b></span>`;
-  $("snapshot").innerHTML = `Новый город или категория — один запуск сборщика, например <code>uv run supplier-finder collect --city tyumen --category meat</code>.`;
+  $("snapshot").innerHTML = `Демо на данных, собранных ${esc(date)}: 5 категорий в городах ${esc(cities().map(([, t]) => t).join(", "))}. Новый город или категория — один запуск сборщика, например <code>uv run supplier-finder collect --city tyumen --category meat</code>.`;
+  $("city-menu").innerHTML = cities().map(([k, t]) => `<li><button data-city="${k}">${esc(t)}</button></li>`).join("");
+  $("city-menu").querySelectorAll("[data-city]").forEach((b) => (b.onclick = () => {
+    S.city = b.dataset.city; S.sel = null; S.mobileCard = false; store.set("sf3.city", S.city); $("city-menu").hidden = true; render();
+  }));
 }
 
-function bind() {
-  document.querySelectorAll("[data-open]").forEach((b) => (b.onclick = () => {
-    S.open = S.open === b.dataset.open ? null : b.dataset.open; render();
-    const el = $("detail"); if (S.open && el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }));
-  document.querySelectorAll("[data-short]").forEach((b) => (b.onclick = () => {
-    const k = b.dataset.short; S.short.has(k) ? S.short.delete(k) : S.short.add(k); store.set("sf2.short", [...S.short]); render();
-  }));
-  const note = $("note");
-  if (note) note.oninput = (e) => { S.notes[e.target.dataset.k] = e.target.value; store.set("sf2.notes", S.notes); };
-}
-
-function render() { renderPicker(); renderCalls(); renderRows(); renderCompare(); bind(); }
+function setView(v) { S.view = v; $("view-search").hidden = v !== "search"; $("view-compare").hidden = v !== "compare"; render(); }
+function render() { renderBar(); if (S.view === "search") { renderList(); renderCard(); } else renderCompare(); }
 
 if (DATA) {
-  $("q").oninput = (e) => { S.q = e.target.value; renderRows(); bind(); };
-  $("f-b2b").onchange = (e) => { S.b2b = e.target.checked; renderRows(); bind(); };
-  $("f-terms").onchange = (e) => { S.terms = e.target.checked; renderRows(); bind(); };
-  render(); renderStatic();
+  $("q").onfocus = () => { $("q").select(); openSuggest(); };
+  $("q").oninput = openSuggest;
+  $("q").onblur = () => setTimeout(() => { $("suggest").hidden = true; renderBar(); }, 120);
+  $("q").onkeydown = (e) => { if (e.key === "Enter") { const first = suggestions($("q").value)[0]; if (first) pickCat(first[0]); } if (e.key === "Escape") $("q").blur(); };
+  $("city-btn").onclick = () => { $("city-menu").querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", b.dataset.city === S.city)); $("city-menu").hidden = !$("city-menu").hidden; };
+  document.addEventListener("click", (e) => { if (!e.target.closest(".city")) $("city-menu").hidden = true; });
+  $("f-b2b").onclick = () => { S.b2b = !S.b2b; render(); };
+  $("f-terms").onclick = () => { S.terms = !S.terms; render(); };
+  $("compare-btn").onclick = () => setView(S.view === "compare" ? "search" : "compare");
+  $("how-btn").onclick = () => { $("how").hidden = false; };
+  $("how-close").onclick = () => { $("how").hidden = true; const v = $("demo-video"); if (v) v.pause(); };
+  $("how").onclick = (e) => { if (e.target === $("how")) $("how-close").onclick(); };
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("how").hidden) $("how-close").onclick(); });
+  renderStatic(); render();
 }
 </script>
