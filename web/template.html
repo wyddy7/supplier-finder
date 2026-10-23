@@ -256,7 +256,8 @@ code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; 
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="how-title">
     <div class="panel-head"><h2 id="how-title">Как это работает</h2><button class="ctrl" id="how-close">Закрыть</button></div>
     <div id="how-video" hidden>
-      <video id="demo-video" controls preload="metadata" playsinline poster="/*__POSTER__*/"></video>
+      <video id="demo-video" controls preload="auto" playsinline poster="/*__POSTER__*/"></video>
+      <p class="muted" id="video-status" style="margin-top:6px" hidden>Загружаем видео…</p>
       <p class="muted" style="margin-top:6px">Видео на минуту: поиск, оценка, условия с цитатами, сравнение.</p>
     </div>
     <p>Трудная часть здесь не интерфейс, а данные: найти реальные компании и не выдумать им условия. Сервис собирает данные в четыре шага, и у каждого факта есть ссылка на страницу, откуда он взят.</p>
@@ -280,7 +281,23 @@ code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; 
 <script>
 const DATA = /*__DATA__*/null;
 const VIDEO = "/*__VIDEO__*/";
-if (VIDEO && !VIDEO.startsWith("/*")) { document.getElementById("demo-video").src = VIDEO; document.getElementById("how-video").hidden = false; }
+const HAS_VIDEO = !!VIDEO && !VIDEO.startsWith("/*");
+if (HAS_VIDEO) document.getElementById("how-video").hidden = false;
+/* Safari plays a video only from a server that answers byte-range requests (206).
+   The artifact asset store answers 200 with the whole file, so Safari refuses it.
+   We fetch the file once from our own origin and play it from a blob: URL instead. */
+let videoReady = null;
+function loadVideo() {
+  if (!HAS_VIDEO) return Promise.resolve(false);
+  if (videoReady) return videoReady;
+  const v = document.getElementById("demo-video"), status = document.getElementById("video-status");
+  status.hidden = false;
+  videoReady = fetch(VIDEO)
+    .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.blob(); })
+    .then((b) => { v.src = URL.createObjectURL(new Blob([b], { type: "video/mp4" })); status.hidden = true; return true; })
+    .catch(() => { v.src = VIDEO; status.textContent = "Если видео не запускается, обновите страницу."; return false; });
+  return videoReady;
+}
 const TERMS = [["min_order", "Минимальный заказ"], ["price_hint", "Цены"], ["delivery_terms", "Доставка"], ["certificates", "Документы"], ["region_served", "Регион работы"], ["works_with_business", "Работа с бизнесом"], ["assortment", "Ассортимент"]];
 const TERM_SHORT = { min_order: "мин. заказ", price_hint: "цены", delivery_terms: "доставка", certificates: "документы" };
 const MESSENGER = { telegram: "Telegram", whatsapp: "WhatsApp", vkontakte: "ВКонтакте", viber: "Viber", max: "MAX" };
@@ -457,7 +474,7 @@ if (DATA) {
   $("f-terms").onclick = () => { S.terms = !S.terms; render(); };
   $("nav-search").onclick = () => setView("search");
   $("compare-btn").onclick = () => setView("compare");
-  $("how-btn").onclick = () => { $("how").hidden = false; $("toast").hidden = true; };
+  $("how-btn").onclick = () => { $("how").hidden = false; $("toast").hidden = true; loadVideo(); };
   $("how-close").onclick = () => { $("how").hidden = true; const v = $("demo-video"); if (v) v.pause(); };
   $("how").onclick = (e) => { if (e.target === $("how")) $("how-close").onclick(); };
   // a one-time toast pointing at the video; dismissal is remembered in this browser
@@ -465,10 +482,15 @@ if (DATA) {
     const poster = $("demo-video").getAttribute("poster") || "";
     if (poster.startsWith("data:")) $("toast-thumb").src = poster; else $("toast-thumb").remove();
     const dismiss = () => { $("toast").hidden = true; store.set("sf4.toast-dismissed", true); };
-    $("toast-open").onclick = () => { dismiss(); $("how").hidden = false; const v = $("demo-video"); try { const p = v.play(); if (p) p.catch(() => {}); } catch {} };
+    $("toast-open").onclick = () => {
+      dismiss(); $("how").hidden = false;
+      const v = $("demo-video"), go = () => { try { const p = v.play(); if (p) p.catch(() => {}); } catch {} };
+      if (v.src) go(); else loadVideo().then(go);
+    };
     $("toast-close").onclick = dismiss;
     setTimeout(() => { if ($("how").hidden) $("toast").hidden = false; }, 1200);
   }
+  if (HAS_VIDEO) setTimeout(loadVideo, 1500); // fetch ahead so «Смотреть» starts at once
   renderStatic(); render();
 }
 </script>
