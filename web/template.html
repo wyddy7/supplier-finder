@@ -1,200 +1,231 @@
 <title>Поставщики для ресторана</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
 <style>
-/* Layout: an app shell. Top bar with search + city; master list on the left, the selected supplier on the right; comparison is its own view. */
+/* Layout: Linear-style app. Sidebar on the chrome colour, one inset panel with a command bar, list on the left, the selected supplier on the right. */
 :root {
-  --bg: #f3f2ee;
-  --surface: #ffffff;
-  --field: #eeede8;
-  --ink: #1c1d1a;
-  --muted: #66645d;
-  --line: #e4e1da;
-  --accent: #1d7148;
+  --chrome: #f4f4f5;
+  --panel: #ffffff;
+  --ink: #1f2023;
+  --muted: #6b6f76;
+  --faint: #8a8f98;
+  --line: #e6e6e9;
+  --hover: #f3f3f5;
+  --selected: #ececef;
+  --field: #f6f6f7;
+  --accent: #1f7a4c;
   --accent-ink: #ffffff;
-  --accent-soft: #e6f0e9;
-  --neg: #b4432f;
-  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-  --r: 8px; --r-sm: 6px;
+  --accent-soft: #e8f2ec;
+  --neg: #c2412d;
+  --sans: "Inter", "Inter Variable", -apple-system, "SF Pro Text", system-ui, sans-serif;
+  --r: 6px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #131412; --surface: #1b1c19; --field: #252622; --ink: #ecebe6; --muted: #a3a198; --line: #30312c;
-    --accent: #62c08c; --accent-ink: #0f1a13; --accent-soft: #1d3125; --neg: #ec8a7a; color-scheme: dark;
+    --chrome: #0e0f10; --panel: #151617; --ink: #e3e4e6; --muted: #9a9ea6; --faint: #6f747c; --line: #26272b;
+    --hover: #1c1d20; --selected: #232428; --field: #1b1c1e; --accent: #4cb782; --accent-ink: #0c1a12; --accent-soft: #19281f; --neg: #ef8a78; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #131412; --surface: #1b1c19; --field: #252622; --ink: #ecebe6; --muted: #a3a198; --line: #30312c;
-  --accent: #62c08c; --accent-ink: #0f1a13; --accent-soft: #1d3125; --neg: #ec8a7a; color-scheme: dark;
+  --chrome: #0e0f10; --panel: #151617; --ink: #e3e4e6; --muted: #9a9ea6; --faint: #6f747c; --line: #26272b;
+  --hover: #1c1d20; --selected: #232428; --field: #1b1c1e; --accent: #4cb782; --accent-ink: #0c1a12; --accent-soft: #19281f; --neg: #ef8a78; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
-body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--sans); }
-a { color: var(--accent); text-underline-offset: 3px; }
+body { background: var(--chrome); color: var(--ink); font: 13px/1.5 var(--sans); font-feature-settings: "tnum" 1, "cv11" 1; -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
 button, input, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
 [hidden] { display: none !important; }
 .muted { color: var(--muted); }
-.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+svg { flex: none; }
 
-.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.app { height: 100%; display: grid; grid-template-columns: 224px minmax(0, 1fr); }
 
-/* top bar */
-.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
-.brand { font-weight: 700; font-size: 15px; white-space: nowrap; margin-right: 6px; }
-.search { position: relative; flex: 1 1 320px; min-width: 0; max-width: 560px; }
-.search input { width: 100%; border: 1px solid transparent; background: var(--field); border-radius: var(--r); padding: 8px 12px; }
-.search input:focus { border-color: var(--accent); outline: none; background: var(--surface); }
-.pop { position: absolute; z-index: 20; left: 0; top: calc(100% + 4px); min-width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 4px; margin: 0; list-style: none; box-shadow: 0 8px 24px rgb(0 0 0 / .12); }
-.pop li button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 7px 10px; border-radius: var(--r-sm); cursor: pointer; white-space: nowrap; }
-.pop li button:hover, .pop li button[aria-selected="true"] { background: var(--accent-soft); }
-.pop .hint { padding: 7px 10px; color: var(--muted); font-size: 13px; }
+/* sidebar */
+.side { display: flex; flex-direction: column; gap: 14px; padding: 10px 8px; min-height: 0; overflow: auto; }
+.ws { display: flex; align-items: center; gap: 8px; padding: 4px 8px; font-weight: 600; font-size: 13px; }
+.ws .logo { width: 18px; height: 18px; border-radius: 5px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 11px; font-weight: 600; }
+.nav { display: grid; gap: 1px; }
+.nav-label { padding: 4px 8px; font-size: 12px; font-weight: 500; color: var(--faint); }
+.nav button { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: transparent; padding: 5px 8px; border-radius: var(--r); font-weight: 500; color: var(--muted); cursor: pointer; text-align: left; }
+.nav button:hover { background: var(--hover); color: var(--ink); }
+.nav button[aria-current="true"] { background: var(--selected); color: var(--ink); }
+.nav .count { margin-left: auto; color: var(--faint); font-weight: 500; }
+.side-foot { margin-top: auto; padding: 8px; font-size: 12px; color: var(--faint); }
+
+/* main panel */
+.main { margin: 8px 8px 8px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.search { position: relative; flex: 1 1 320px; min-width: 0; max-width: 520px; }
+.search svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--faint); pointer-events: none; }
+.search input { width: 100%; border: 1px solid var(--line); background: var(--field); border-radius: var(--r); padding: 5px 44px 5px 30px; height: 30px; }
+.search input:focus { outline: none; border-color: var(--accent); background: var(--panel); }
+.kbd { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--faint); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; line-height: 17px; background: var(--panel); pointer-events: none; }
+.pop { position: absolute; z-index: 20; left: 0; top: calc(100% + 4px); min-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 4px; margin: 0; list-style: none; box-shadow: 0 8px 28px rgb(0 0 0 / .12); }
+.pop li button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; border: 0; background: transparent; padding: 6px 8px; border-radius: var(--r); cursor: pointer; white-space: nowrap; }
+.pop li button:hover, .pop li button[aria-selected="true"] { background: var(--hover); }
+.pop .hint { padding: 6px 8px; color: var(--faint); font-size: 12px; }
 .city { position: relative; }
-.ctrl { border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 7px 12px; cursor: pointer; white-space: nowrap; }
-.ctrl:hover { border-color: var(--accent); }
-.ctrl[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.ctrl .count { font-family: var(--mono); margin-left: 6px; }
-.bar-right { display: flex; gap: 8px; margin-left: auto; }
-.short { display: none; }
+.ctrl { display: inline-flex; align-items: center; gap: 6px; height: 30px; border: 1px solid var(--line); background: var(--panel); border-radius: var(--r); padding: 0 10px; cursor: pointer; white-space: nowrap; font-weight: 500; }
+.ctrl:hover { background: var(--hover); }
+.ctrl[aria-pressed="true"] { background: var(--selected); }
+.crumb { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; }
 
-/* search view: master–detail */
 .view { min-height: 0; }
-.md { height: 100%; display: grid; grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); min-height: 0; }
-.list-pane { border-right: 1px solid var(--line); background: var(--surface); overflow: auto; min-height: 0; }
-.list-head { padding: 12px 16px 10px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; position: sticky; top: 0; background: var(--surface); z-index: 2; }
-.list-head .title { font-weight: 600; }
-.demo { font-size: 12px; color: var(--muted); }
-.filters { display: flex; flex-wrap: wrap; gap: 6px; }
-.filter { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 3px 10px; font-size: 13px; cursor: pointer; }
-.filter[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.list { list-style: none; margin: 0; padding: 0; }
-.item { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 2px 10px; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 11px 16px; cursor: pointer; }
-.item:hover { background: var(--bg); }
-.item[aria-current="true"] { background: var(--accent-soft); }
-.item .rank { color: var(--muted); font-family: var(--mono); font-size: 12px; padding-top: 2px; }
-.item .name { font-weight: 600; overflow-wrap: anywhere; }
-.item .score { font-family: var(--mono); font-size: 13px; }
-.item .why { grid-column: 2 / 4; font-size: 13px; color: var(--muted); }
-.empty { padding: 16px; color: var(--muted); }
+.md { height: 100%; display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); min-height: 0; }
+.list-pane { border-right: 1px solid var(--line); overflow: auto; min-height: 0; }
+.list-head { padding: 8px 12px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; position: sticky; top: 0; background: var(--panel); z-index: 2; }
+.list-head .title { font-weight: 500; margin-right: auto; }
+.filter { height: 24px; border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 0 9px; font-size: 12px; color: var(--muted); cursor: pointer; }
+.filter:hover { background: var(--hover); }
+.filter[aria-pressed="true"] { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+.list { list-style: none; margin: 0; padding: 4px; }
+.item { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 1px 8px; width: 100%; text-align: left; border: 0; background: transparent; padding: 7px 8px; border-radius: var(--r); cursor: pointer; }
+.item:hover { background: var(--hover); }
+.item[aria-current="true"] { background: var(--selected); }
+.item .rank { color: var(--faint); font-size: 12px; }
+.item .name { font-weight: 500; overflow-wrap: anywhere; }
+.item .score { font-weight: 500; color: var(--muted); }
+.item .why { grid-column: 2 / 4; font-size: 12px; color: var(--muted); }
+.demo { padding: 10px 12px 14px; font-size: 12px; color: var(--faint); }
+.empty { padding: 14px; color: var(--muted); }
 
 .card-pane { overflow: auto; min-height: 0; }
-.card { max-width: 860px; padding: 22px 28px 40px; display: grid; gap: 22px; }
+.card { max-width: 820px; padding: 20px 28px 40px; display: grid; gap: 20px; }
 .back { display: none !important; }
-.head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: start; }
-.head h1 { font-size: 22px; line-height: 1.25; margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; align-items: start; }
+.head h1 { font-size: 18px; line-height: 1.3; margin: 0; font-weight: 600; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .head .sub { color: var(--muted); }
-.head .meta { grid-column: 1 / 3; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
-.badge { text-align: right; }
-.badge b { font-family: var(--mono); font-size: 22px; font-weight: 500; }
-.badge span { display: block; font-size: 12px; color: var(--muted); }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.act { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 8px 14px; text-decoration: none; color: var(--ink); cursor: pointer; }
-.act:hover { border-color: var(--accent); }
+.head .meta { grid-column: 1 / 3; display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.score-pill { display: inline-flex; align-items: baseline; gap: 3px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-weight: 600; }
+.score-pill span { color: var(--faint); font-weight: 400; font-size: 12px; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.act { display: inline-flex; align-items: center; gap: 6px; height: 30px; border: 1px solid var(--line); background: var(--panel); border-radius: var(--r); padding: 0 11px; color: var(--ink); cursor: pointer; font-weight: 500; text-decoration: none !important; }
+.act:hover { background: var(--hover); }
 .act.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.act.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.act .mono { font-size: 13px; }
-.sec { display: grid; gap: 10px; }
-.sec h2 { font-size: 15px; font-weight: 600; margin: 0; }
-.kv { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 4px 18px; padding: 10px 0; border-top: 1px solid var(--line); }
+.act.primary:hover { filter: brightness(1.06); }
+.act.on { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+.sec { display: grid; gap: 6px; }
+.sec h2 { font-size: 12px; font-weight: 500; color: var(--faint); margin: 0; }
+.kv { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 2px 16px; padding: 8px 0; border-top: 1px solid var(--line); }
 .kv:first-of-type { border-top: 0; }
 .kv .k { color: var(--muted); }
-.kv q { display: block; quotes: "«" "»"; color: var(--muted); font-size: 13px; margin-top: 4px; }
-.kv .src { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
-.unknown { color: var(--muted); }
-.pts div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 6px 0; border-top: 1px solid var(--line); }
+.kv q { display: block; quotes: "«" "»"; color: var(--muted); font-size: 12px; margin-top: 3px; }
+.kv .src { font-size: 12px; overflow-wrap: anywhere; }
+.unknown { color: var(--faint); }
+.pts div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 5px 0; border-top: 1px solid var(--line); }
 .pts div:first-child { border-top: 0; }
-.pts b { font-family: var(--mono); font-weight: 500; }
+.pts b { font-weight: 500; }
 .pts .neg { color: var(--neg); }
-textarea { width: 100%; min-height: 70px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--field); padding: 8px 10px; resize: vertical; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+textarea { width: 100%; min-height: 64px; border: 1px solid var(--line); border-radius: var(--r); background: var(--field); padding: 7px 9px; resize: vertical; }
 
 /* comparison view */
-.compare { height: 100%; overflow: auto; padding: 20px 24px 40px; display: grid; gap: 14px; align-content: start; }
-.compare-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
-.compare-head h1 { font-size: 20px; margin: 0; font-weight: 700; margin-right: auto; }
-.tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
-table { border-collapse: collapse; width: 100%; min-width: 900px; font-size: 13px; }
-th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-weight: 600; color: var(--muted); }
+.compare { height: 100%; overflow: auto; padding: 16px 20px 32px; display: grid; gap: 12px; align-content: start; }
+.compare-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.compare-head h1 { font-size: 15px; margin: 0; font-weight: 600; margin-right: auto; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; min-width: 900px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 500; color: var(--faint); font-size: 12px; }
 tr:last-child td { border-bottom: 0; }
+tbody tr:hover { background: var(--hover); }
 
-/* how it works panel */
-.overlay { position: fixed; inset: 0; z-index: 50; background: rgb(20 20 18 / .45); display: grid; place-items: start center; overflow: auto; padding: calc(env(safe-area-inset-top, 0px) + 32px) 16px 32px; }
-.panel { width: min(880px, 100%); background: var(--surface); border-radius: 12px; padding: 22px 24px 26px; display: grid; gap: 16px; box-shadow: 0 20px 60px rgb(0 0 0 / .25); }
+/* how it works dialog */
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgb(10 10 12 / .38); display: grid; place-items: start center; overflow: auto; padding: calc(env(safe-area-inset-top, 0px) + 56px) 16px 32px; }
+.panel { width: min(820px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px 22px; display: grid; gap: 14px; box-shadow: 0 24px 64px rgb(0 0 0 / .22); }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.panel h2 { font-size: 18px; margin: 0; }
-.panel video { width: 100%; aspect-ratio: 16 / 9; border-radius: var(--r); background: #1c1d1a; display: block; }
-.panel ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.panel h2 { font-size: 15px; margin: 0; font-weight: 600; }
+.panel video { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; background: #111; display: block; }
+.panel ol { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
 .panel p { margin: 0; }
-.stats { display: flex; flex-wrap: wrap; gap: 4px 20px; color: var(--muted); }
-.stats b { color: var(--ink); font-family: var(--mono); font-weight: 500; }
-code { font-family: var(--mono); font-size: 12px; background: var(--field); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+.stats { display: flex; flex-wrap: wrap; gap: 2px 18px; color: var(--muted); }
+.stats b { color: var(--ink); font-weight: 500; }
+code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; background: var(--field); border: 1px solid var(--line); padding: 0 5px; border-radius: 4px; overflow-wrap: anywhere; }
 
-/* phone: list and card are two screens */
+/* phone: sidebar becomes a strip, list and card are two screens */
 @media (max-width: 760px) {
-  .brand { display: none; }
-  .search { flex-basis: 100%; max-width: none; order: -1; }
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .side { flex-direction: row; align-items: center; gap: 4px; padding: 6px 8px; overflow-x: auto; }
+  .side .nav-label, .side .side-foot, .nav-cats { display: none; }
+  .nav { display: flex; gap: 2px; }
+  .nav button { white-space: nowrap; }
+  .ws { padding-right: 4px; }
+  .ws .ws-name { display: none; }
   .long { display: none; }
-  .short { display: inline; }
-  #how-btn { padding-inline: 13px; }
-  .bar-right { margin-left: auto; }
+  .main { margin: 0; border-radius: 0; border-left: 0; border-right: 0; }
+  .search { flex-basis: 100%; max-width: none; }
+  .crumb { display: none; }
   .md { grid-template-columns: minmax(0, 1fr); }
   .md .card-pane { display: none; }
   .md.show-card .list-pane { display: none; }
   .md.show-card .card-pane { display: block; }
-  .card { padding: 16px; }
+  .card { padding: 14px; }
   .back { display: inline-flex !important; justify-self: start; }
   .kv { grid-template-columns: minmax(0, 1fr); }
-  .compare { padding: 16px; }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .item, .ctrl, .act, .filter { transition: background-color .12s, border-color .12s; }
-  .overlay:not([hidden]) { animation: fade-in .22s ease-out; }
-  .overlay:not([hidden]) .panel { animation: rise .26s cubic-bezier(.2, .8, .2, 1); }
-  #view-compare:not([hidden]) { animation: fade-in .18s ease-out; }
+  .item, .ctrl, .act, .filter, .nav button { transition: background-color .1s, color .1s; }
+  .overlay:not([hidden]) { animation: fade-in .2s ease-out; }
+  .overlay:not([hidden]) .panel { animation: rise .24s cubic-bezier(.2, .8, .2, 1); }
+  #view-compare:not([hidden]) { animation: fade-in .16s ease-out; }
   @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px) scale(.99); } to { opacity: 1; transform: none; } }
 }
 </style>
 
 <div class="app">
-  <header class="bar">
-    <span class="brand">Поставщики</span>
-    <div class="search">
-      <input id="q" type="text" autocomplete="off" placeholder="Что ищете? Например, упаковка" aria-label="Что ищете">
-      <ul class="pop" id="suggest" hidden></ul>
+  <nav class="side" aria-label="Разделы">
+    <div class="ws"><span class="logo">П</span><span class="ws-name">Поставщики</span></div>
+    <div class="nav">
+      <button id="nav-search" aria-current="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>Поиск</button>
+      <button id="compare-btn" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="5" height="10" rx="1"/><rect x="9" y="3" width="5" height="10" rx="1"/></svg>Сравнение<span class="count" id="compare-count">0</span></button>
+      <button id="how-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 7.5V11M8 5v.01"/></svg><span class="long">Как это работает</span></button>
     </div>
-    <div class="city">
-      <button class="ctrl" id="city-btn" aria-haspopup="listbox"></button>
-      <ul class="pop" id="city-menu" hidden></ul>
+    <div class="nav nav-cats">
+      <div class="nav-label">Категории</div>
+      <div id="side-cats" class="nav"></div>
     </div>
-    <div class="bar-right">
-      <button class="ctrl" id="compare-btn" aria-pressed="false">Сравнение<span class="count" id="compare-count">0</span></button>
-      <button class="ctrl" id="how-btn" aria-label="Как это работает"><span class="long">Как это работает</span><span class="short">?</span></button>
-    </div>
-  </header>
+    <div class="side-foot" id="side-foot"></div>
+  </nav>
 
-  <div class="view" id="view-search">
-    <div class="md" id="md">
-      <aside class="list-pane">
-        <div class="list-head">
-          <div class="title" id="list-title"></div>
-          <div class="filters">
-            <button class="filter" id="f-b2b" aria-pressed="false">Только опт и производство</button>
+  <section class="main">
+    <header class="bar">
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
+        <input id="q" type="text" autocomplete="off" placeholder="Что ищете? Например, упаковка" aria-label="Что ищете">
+        <span class="kbd">⌘K</span>
+        <ul class="pop" id="suggest" hidden></ul>
+      </div>
+      <div class="city">
+        <button class="ctrl" id="city-btn" aria-haspopup="listbox"></button>
+        <ul class="pop" id="city-menu" hidden></ul>
+      </div>
+      <span class="crumb" id="crumb"></span>
+    </header>
+
+    <div class="view" id="view-search">
+      <div class="md" id="md">
+        <aside class="list-pane">
+          <div class="list-head">
+            <span class="title" id="list-title"></span>
+            <button class="filter" id="f-b2b" aria-pressed="false">Опт и производство</button>
             <button class="filter" id="f-terms" aria-pressed="false">Условия на сайте</button>
           </div>
+          <ol class="list" id="list"></ol>
           <div class="demo" id="demo"></div>
-        </div>
-        <ol class="list" id="list"></ol>
-      </aside>
-      <section class="card-pane" id="card"></section>
+        </aside>
+        <section class="card-pane" id="card"></section>
+      </div>
     </div>
-  </div>
 
-  <div class="view" id="view-compare" hidden>
-    <div class="compare" id="compare"></div>
-  </div>
+    <div class="view" id="view-compare" hidden>
+      <div class="compare" id="compare"></div>
+    </div>
+  </section>
 </div>
 
 <div class="overlay" id="how" hidden>
@@ -202,7 +233,7 @@ code { font-family: var(--mono); font-size: 12px; background: var(--field); padd
     <div class="panel-head"><h2 id="how-title">Как это работает</h2><button class="ctrl" id="how-close">Закрыть</button></div>
     <div id="how-video" hidden>
       <video id="demo-video" controls preload="metadata" playsinline poster="/*__POSTER__*/"></video>
-      <p class="muted" style="margin-top:8px">Видео на минуту: поиск, оценка, условия с цитатами, сравнение.</p>
+      <p class="muted" style="margin-top:6px">Видео на минуту: поиск, оценка, условия с цитатами, сравнение.</p>
     </div>
     <p>Трудная часть здесь не интерфейс, а данные: найти реальные компании и не выдумать им условия. Сервис собирает данные в четыре шага, и у каждого факта есть ссылка на страницу, откуда он взят.</p>
     <ol>
@@ -228,9 +259,9 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
 };
 const S = {
-  cat: store.get("sf3.cat", "packaging"), city: store.get("sf3.city", "ekaterinburg"), sel: null,
+  cat: store.get("sf4.cat", "packaging"), city: store.get("sf4.city", "ekaterinburg"), sel: null,
   view: "search", b2b: false, terms: false, mobileCard: false,
-  short: new Set(store.get("sf3.short", [])), notes: store.get("sf3.notes", {})
+  short: new Set(store.get("sf4.short", [])), notes: store.get("sf4.notes", {})
 };
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -257,7 +288,6 @@ function whyLine(s) {
   return parts.join(" · ");
 }
 
-/* search with suggestions: the five demo categories */
 function suggestions(q) {
   q = q.trim().toLowerCase();
   return Object.entries(DATA.categories).filter(([, t]) => {
@@ -274,18 +304,22 @@ function openSuggest() {
   $("suggest").hidden = false;
   $("suggest").querySelectorAll("[data-cat]").forEach((b) => (b.onmousedown = (e) => { e.preventDefault(); pickCat(b.dataset.cat); }));
 }
-function pickCat(k) { S.cat = k; S.sel = null; S.mobileCard = false; store.set("sf3.cat", k); $("q").value = DATA.categories[k]; $("suggest").hidden = true; $("q").blur(); render(); }
+function pickCat(k) { S.cat = k; S.sel = null; S.mobileCard = false; store.set("sf4.cat", k); $("q").value = DATA.categories[k]; $("suggest").hidden = true; $("q").blur(); setView("search"); }
 
-function renderBar() {
+function renderChrome() {
   if (document.activeElement !== $("q")) $("q").value = DATA.categories[S.cat];
-  $("city-btn").textContent = DATA.cities[S.city] + " ▾";
+  $("city-btn").innerHTML = `${esc(DATA.cities[S.city])} <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 3.5 5 6.5 8 3.5"/></svg>`;
   $("compare-count").textContent = S.short.size;
-  $("compare-btn").setAttribute("aria-pressed", S.view === "compare");
+  $("nav-search").setAttribute("aria-current", S.view === "search");
+  $("compare-btn").setAttribute("aria-current", S.view === "compare");
+  $("crumb").textContent = S.view === "compare" ? "Сравнение" : `${DATA.categories[S.cat]} · ${DATA.cities[S.city]}`;
+  $("side-cats").innerHTML = Object.entries(DATA.categories).map(([k, t]) => `<button data-side-cat="${k}" aria-current="${S.view === "search" && k === S.cat}">${esc(t)}</button>`).join("");
+  $("side-cats").querySelectorAll("[data-side-cat]").forEach((b) => (b.onclick = () => pickCat(b.dataset.sideCat)));
 }
 
 function renderList() {
   const base = ranked(), rows = visible();
-  $("list-title").textContent = `${DATA.categories[S.cat]}, ${DATA.cities[S.city]}: ${base.length} ${plural(base.length, "поставщик", "поставщика", "поставщиков")}`;
+  $("list-title").textContent = `${base.length} ${plural(base.length, "поставщик", "поставщика", "поставщиков")}`;
   $("f-b2b").setAttribute("aria-pressed", S.b2b);
   $("f-terms").setAttribute("aria-pressed", S.terms);
   if (!S.sel || !rows.some((s) => key(s) === S.sel)) S.sel = rows[0] ? key(rows[0]) : null;
@@ -310,47 +344,47 @@ function renderCard() {
   const d = s.directory, c = s.contacts, k = key(s), inShort = S.short.has(k), phone = c.phones[0];
   const tel = phone ? "tel:" + phone.replace(/[^\d+]/g, "") : null;
   const others = [
-    ...c.phones.slice(1).map((p) => `<span class="mono">${esc(p)}</span>`),
-    ...c.emails.map((e) => `<span class="mono">${esc(e)}</span>`),
+    ...c.phones.slice(1).map((p) => `<span>${esc(p)}</span>`),
+    ...c.emails.map((e) => `<span>${esc(e)}</span>`),
     ...Object.entries(c.messengers).map(([m, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(MESSENGER[m] || m)}</a>`),
   ];
   $("card").innerHTML = `<div class="card">
     <button class="act back" id="back">← К списку</button>
     <div class="head">
       <div><h1>${esc(d.name)}</h1><div class="sub">${esc(cap(d.kind || ""))}</div></div>
-      <div class="badge"><b>${Math.round(s.score)}</b><span>из 100</span></div>
+      <span class="score-pill">${Math.round(s.score)}<span>/ 100</span></span>
       <div class="meta">${d.rating ? `<span>★ ${String(d.rating).replace(".", ",")} · ${d.review_count} ${plural(d.review_count, "отзыв", "отзыва", "отзывов")}</span>` : `<span>нет отзывов</span>`}
         ${d.address ? `<span>${esc(d.address)}</span>` : ""}${d.branch_count > 1 ? `<span>${d.branch_count} филиалов</span>` : ""}</div>
     </div>
     <div class="actions">
-      ${tel ? `<a class="act primary" href="${tel}">Позвонить <span class="mono">${esc(phone)}</span></a>` : `<span class="act">Телефона нет</span>`}
-      ${c.websites[0] ? `<a class="act" href="${esc(c.websites[0])}" target="_blank" rel="noopener">Сайт ${esc(host(c.websites[0]))}</a>` : ""}
-      <a class="act" href="${esc(c.source_url)}" target="_blank" rel="noopener">2ГИС</a>
-      <button class="act${inShort ? " on" : ""}" id="short-toggle">${inShort ? "В сравнении ✓" : "В сравнение"}</button>
+      ${tel ? `<a class="act primary" href="${tel}">Позвонить · ${esc(phone)}</a>` : `<span class="act">Телефона нет</span>`}
+      ${c.websites[0] ? `<a class="act" href="${esc(c.websites[0])}" target="_blank" rel="noopener">${esc(host(c.websites[0]))} ↗</a>` : ""}
+      <a class="act" href="${esc(c.source_url)}" target="_blank" rel="noopener">2ГИС ↗</a>
+      <button class="act${inShort ? " on" : ""}" id="short-toggle">${inShort ? "В сравнении" : "В сравнение"}</button>
     </div>
     <div class="sec" id="sec-terms"><h2>Условия с сайта</h2>
       <div>${TERMS.map(([f, l]) => termRow(s, f, l)).join("")}</div>
-      <p class="muted" style="margin:0">${s.site_checked.length ? "Каждое условие подтверждено дословной цитатой со страницы компании." : "У компании нет сайта в справочнике: условия только по телефону."}</p></div>
+      <p class="muted" style="margin:0;font-size:12px">${s.site_checked.length ? "Каждое условие подтверждено дословной цитатой со страницы компании." : "У компании нет сайта в справочнике: условия только по телефону."}</p></div>
     <div class="sec" id="sec-why"><h2>Почему ${Math.round(s.score)} из 100</h2>
       <div class="pts">${s.reasons.map((r) => `<div><span>${esc(r.label)}</span><b class="${r.points < 0 ? "neg" : ""}">${r.points > 0 ? "+" : ""}${r.points}</b></div>`).join("")}</div></div>
-    ${others.length ? `<div class="sec"><h2>Ещё контакты</h2><div class="actions">${others.join("")}</div></div>` : ""}
+    ${others.length ? `<div class="sec"><h2>Ещё контакты</h2><div class="chips">${others.join("")}</div></div>` : ""}
     <div class="sec"><h2>Заметка</h2><textarea id="note" placeholder="Например: звонил 24.10, прайс пришлют на почту">${esc(S.notes[k] || "")}</textarea>
       <span class="muted" style="font-size:12px">Хранится только в этом браузере.</span></div>
   </div>`;
   $("back").onclick = () => { S.mobileCard = false; render(); };
-  $("short-toggle").onclick = () => { S.short.has(k) ? S.short.delete(k) : S.short.add(k); store.set("sf3.short", [...S.short]); render(); };
-  $("note").oninput = (e) => { S.notes[k] = e.target.value; store.set("sf3.notes", S.notes); };
+  $("short-toggle").onclick = () => { S.short.has(k) ? S.short.delete(k) : S.short.add(k); store.set("sf4.short", [...S.short]); render(); };
+  $("note").oninput = (e) => { S.notes[k] = e.target.value; store.set("sf4.notes", S.notes); };
 }
 
 function cell(s, f) { const x = s.site[f]; return x ? `${esc(x.value)} <a href="${esc(x.source_url)}" target="_blank" rel="noopener">источник</a>` : `<span class="unknown">неизвестно</span>`; }
 function renderCompare() {
   const rows = [...S.short].map((k) => byKey[k]).filter(Boolean).sort((a, b) => b.score - a.score);
-  $("compare").innerHTML = `<div class="compare-head"><h1>Сравнение: ${rows.length} ${plural(rows.length, "поставщик", "поставщика", "поставщиков")}</h1>
-      ${rows.length ? `<button class="ctrl" id="copy-short">Скопировать списком</button>` : ""}<button class="ctrl" id="to-search">← К поиску</button></div>
+  $("compare").innerHTML = `<div class="compare-head"><h1>Сравнение · ${rows.length} ${plural(rows.length, "поставщик", "поставщика", "поставщиков")}</h1>
+      ${rows.length ? `<button class="ctrl" id="copy-short">Скопировать списком</button>` : ""}<button class="ctrl" id="to-search">К поиску</button></div>
     ${rows.length ? `<div class="tablewrap"><table><thead><tr><th>Поставщик</th><th>Оценка</th><th>Мин. заказ</th><th>Доставка</th><th>Документы</th><th>Цены</th><th>Телефон</th><th>Заметка</th></tr></thead><tbody>${
-      rows.map((s) => `<tr><td><b>${esc(s.directory.name)}</b><br><span class="muted">${esc(DATA.categories[s.category])}, ${esc(DATA.cities[s.city])}</span></td>
-        <td class="mono">${Math.round(s.score)}</td><td>${cell(s, "min_order")}</td><td>${cell(s, "delivery_terms")}</td><td>${cell(s, "certificates")}</td><td>${cell(s, "price_hint")}</td>
-        <td class="mono">${esc(s.contacts.phones[0] || "—")}</td><td>${esc(S.notes[key(s)] || "")}</td></tr>`).join("")}</tbody></table></div>`
+      rows.map((s) => `<tr><td><b style="font-weight:500">${esc(s.directory.name)}</b><br><span class="muted">${esc(DATA.categories[s.category])}, ${esc(DATA.cities[s.city])}</span></td>
+        <td>${Math.round(s.score)}</td><td>${cell(s, "min_order")}</td><td>${cell(s, "delivery_terms")}</td><td>${cell(s, "certificates")}</td><td>${cell(s, "price_hint")}</td>
+        <td style="white-space:nowrap">${esc(s.contacts.phones[0] || "—")}</td><td>${esc(S.notes[key(s)] || "")}</td></tr>`).join("")}</tbody></table></div>`
       : `<p class="muted">Пока пусто. Откройте поставщика и нажмите «В сравнение».</p>`}`;
   $("to-search").onclick = () => setView("search");
   const cp = $("copy-short");
@@ -364,33 +398,38 @@ function renderCompare() {
 function renderStatic() {
   const date = (DATA.generated_at || "").slice(0, 10).split("-").reverse().join(".");
   $("demo").textContent = `Демо: ${Object.keys(DATA.categories).length} категорий, ${cities().length} города, данные на ${date}. В рабочей версии — любой запрос, около 40 секунд на сбор.`;
+  $("side-foot").textContent = `Данные на ${date}`;
   const run = (DATA.runs || []).at(-1) || {};
   const facts = all.reduce((n, s) => n + Object.values(s.site).filter(Boolean).length, 0);
   $("stats").innerHTML = `<span>компаний <b>${all.length}</b></span><span>с прочитанным сайтом <b>${all.filter((s) => s.site_checked.length).length}</b></span><span>условий с цитатой <b>${facts}</b></span><span>модель за весь сбор <b>$${run.llm_usd != null ? Number(run.llm_usd).toFixed(2) : "—"}</b></span>`;
   $("snapshot").innerHTML = `Демо на данных, собранных ${esc(date)}: 5 категорий в городах ${esc(cities().map(([, t]) => t).join(", "))}. Новый город или категория — один запуск сборщика, например <code>uv run supplier-finder collect --city tyumen --category meat</code>.`;
   $("city-menu").innerHTML = cities().map(([k, t]) => `<li><button data-city="${k}">${esc(t)}</button></li>`).join("");
   $("city-menu").querySelectorAll("[data-city]").forEach((b) => (b.onclick = () => {
-    S.city = b.dataset.city; S.sel = null; S.mobileCard = false; store.set("sf3.city", S.city); $("city-menu").hidden = true; render();
+    S.city = b.dataset.city; S.sel = null; S.mobileCard = false; store.set("sf4.city", S.city); $("city-menu").hidden = true; setView("search");
   }));
 }
 
 function setView(v) { S.view = v; $("view-search").hidden = v !== "search"; $("view-compare").hidden = v !== "compare"; render(); }
-function render() { renderBar(); if (S.view === "search") { renderList(); renderCard(); } else renderCompare(); }
+function render() { renderChrome(); if (S.view === "search") { renderList(); renderCard(); } else renderCompare(); }
 
 if (DATA) {
   $("q").onfocus = () => { $("q").select(); openSuggest(); };
   $("q").oninput = openSuggest;
-  $("q").onblur = () => setTimeout(() => { $("suggest").hidden = true; renderBar(); }, 120);
+  $("q").onblur = () => setTimeout(() => { $("suggest").hidden = true; renderChrome(); }, 120);
   $("q").onkeydown = (e) => { if (e.key === "Enter") { const first = suggestions($("q").value)[0]; if (first) pickCat(first[0]); } if (e.key === "Escape") $("q").blur(); };
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("q").focus(); }
+    if (e.key === "Escape" && !$("how").hidden) $("how-close").onclick();
+  });
   $("city-btn").onclick = () => { $("city-menu").querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", b.dataset.city === S.city)); $("city-menu").hidden = !$("city-menu").hidden; };
   document.addEventListener("click", (e) => { if (!e.target.closest(".city")) $("city-menu").hidden = true; });
   $("f-b2b").onclick = () => { S.b2b = !S.b2b; render(); };
   $("f-terms").onclick = () => { S.terms = !S.terms; render(); };
-  $("compare-btn").onclick = () => setView(S.view === "compare" ? "search" : "compare");
+  $("nav-search").onclick = () => setView("search");
+  $("compare-btn").onclick = () => setView("compare");
   $("how-btn").onclick = () => { $("how").hidden = false; };
   $("how-close").onclick = () => { $("how").hidden = true; const v = $("demo-video"); if (v) v.pause(); };
   $("how").onclick = (e) => { if (e.target === $("how")) $("how-close").onclick(); };
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("how").hidden) $("how-close").onclick(); });
   renderStatic(); render();
 }
 </script>
