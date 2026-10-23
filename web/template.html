@@ -175,6 +175,30 @@ code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; 
   @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
   @keyframes rise { from { opacity: 0; transform: translateY(10px) scale(.99); } to { opacity: 1; transform: none; } }
 }
+
+/* video toast: bottom-right where there is room, otherwise docked at the bottom of the sidebar; a bar on phones */
+.toast { position: fixed; z-index: 40; display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 8px 8px 8px; box-shadow: 0 8px 28px rgb(0 0 0 / .14); }
+.toast img { width: 64px; height: 36px; object-fit: cover; border-radius: 4px; flex: none; background: var(--field); }
+.toast .t-text { font-weight: 500; min-width: 0; }
+.toast .t-text span { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.toast .t-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.toast .t-close { border: 0; background: transparent; color: var(--faint); width: 26px; height: 26px; border-radius: var(--r); cursor: pointer; font-size: 16px; line-height: 1; }
+.toast .t-close:hover { background: var(--hover); color: var(--ink); }
+.toast .act { height: 28px; }
+@media (min-width: 1840px) { .toast { right: 20px; bottom: 20px; width: 360px; } }
+@media (min-width: 761px) and (max-width: 1839px) {
+  .toast { left: 8px; bottom: 36px; width: 208px; flex-wrap: wrap; gap: 8px; }
+  .toast img { width: 100%; height: auto; aspect-ratio: 16 / 9; }
+  .toast .t-text { flex: 1 1 100%; }
+  .toast .t-actions { margin-left: 0; width: 100%; justify-content: space-between; }
+}
+@media (max-width: 760px) {
+  .toast { left: 8px; right: 8px; bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); padding: 6px 6px 6px 8px; }
+  .toast img { display: none; }
+  .toast .t-text span { display: none; }
+  .list-pane, .card-pane { padding-bottom: 64px; }
+}
+@media (prefers-reduced-motion: no-preference) { .toast:not([hidden]) { animation: rise .28s cubic-bezier(.2, .8, .2, 1); } }
 </style>
 
 <div class="app">
@@ -245,6 +269,12 @@ code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; 
     <div class="stats" id="stats"></div>
     <p class="muted" id="snapshot"></p>
   </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden>
+  <img id="toast-thumb" alt="">
+  <div class="t-text">Видео на минуту<span>Как сервис ищет и оценивает поставщиков</span></div>
+  <div class="t-actions"><button class="act primary" id="toast-open">Смотреть</button><button class="t-close" id="toast-close" aria-label="Закрыть">×</button></div>
 </div>
 
 <script>
@@ -427,9 +457,18 @@ if (DATA) {
   $("f-terms").onclick = () => { S.terms = !S.terms; render(); };
   $("nav-search").onclick = () => setView("search");
   $("compare-btn").onclick = () => setView("compare");
-  $("how-btn").onclick = () => { $("how").hidden = false; };
+  $("how-btn").onclick = () => { $("how").hidden = false; $("toast").hidden = true; };
   $("how-close").onclick = () => { $("how").hidden = true; const v = $("demo-video"); if (v) v.pause(); };
   $("how").onclick = (e) => { if (e.target === $("how")) $("how-close").onclick(); };
+  // a one-time toast pointing at the video; dismissal is remembered in this browser
+  if (!$("how-video").hidden && !store.get("sf4.toast-dismissed", false)) {
+    const poster = $("demo-video").getAttribute("poster") || "";
+    if (poster.startsWith("data:")) $("toast-thumb").src = poster; else $("toast-thumb").remove();
+    const dismiss = () => { $("toast").hidden = true; store.set("sf4.toast-dismissed", true); };
+    $("toast-open").onclick = () => { dismiss(); $("how").hidden = false; const v = $("demo-video"); try { const p = v.play(); if (p) p.catch(() => {}); } catch {} };
+    $("toast-close").onclick = dismiss;
+    setTimeout(() => { if ($("how").hidden) $("toast").hidden = false; }, 1200);
+  }
   renderStatic(); render();
 }
 </script>
